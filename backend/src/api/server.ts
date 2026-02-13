@@ -2,14 +2,13 @@ import express from "express";
 import jwt from "jsonwebtoken";
 import { addTask } from "../core/taskQueue";
 import authRoutes from "./auth";
+import { checkGMMC } from "../core/gmmcGuard";
 
 const app = express();
 app.use(express.json());
 
-// Auth routes
 app.use("/auth", authRoutes);
 
-// JWT middleware
 function requireAuth(req: any, res: any, next: any) {
   const token = req.headers.authorization?.split(" ")[1];
   if (!token) return res.status(401).send("No token");
@@ -23,16 +22,28 @@ function requireAuth(req: any, res: any, next: any) {
   }
 }
 
-// Protected task endpoint
 app.post("/task", requireAuth, async (req: any, res) => {
-  const wallet = req.user.wallet;
-  const { goal } = req.body;
+  try {
+    const wallet = req.user.wallet;
+    const { goal } = req.body;
 
-  const result = await addTask({ goal, wallet });
-  res.json(result);
+    // 🔐 GMMC Access Control
+    const allowed = await checkGMMC(wallet);
+    if (!allowed) {
+      return res.status(403).json({
+        error: "Insufficient GMMC",
+        required: process.env.MIN_HOLD
+      });
+    }
+
+    const result = await addTask({ goal, wallet });
+    res.json(result);
+
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("Task failed");
+  }
 });
-
-app.get("/health", (_, res) => res.send("ok"));
 
 app.listen(process.env.PORT || 3001, () =>
   console.log("OmniClaw API running")
