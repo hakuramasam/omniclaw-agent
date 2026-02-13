@@ -1,27 +1,35 @@
 import express from "express";
+import jwt from "jsonwebtoken";
 import { addTask } from "../core/taskQueue";
+import authRoutes from "./auth";
 
 const app = express();
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json());
 
-// Basic API key protection
-app.use((req, res, next) => {
-  const key = req.headers["x-api-key"];
-  if (process.env.API_KEY && key !== process.env.API_KEY) {
-    return res.status(401).send("Unauthorized");
-  }
-  next();
-});
+// Auth routes
+app.use("/auth", authRoutes);
 
-app.post("/task", async (req, res) => {
+// JWT middleware
+function requireAuth(req: any, res: any, next: any) {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return res.status(401).send("No token");
+
   try {
-    const { goal, wallet } = req.body;
-    const result = await addTask({ goal, wallet });
-    res.json(result);
-  } catch (e) {
-    console.error(e);
-    res.status(500).send("Task failed");
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
+    req.user = decoded;
+    next();
+  } catch {
+    res.status(401).send("Invalid token");
   }
+}
+
+// Protected task endpoint
+app.post("/task", requireAuth, async (req: any, res) => {
+  const wallet = req.user.wallet;
+  const { goal } = req.body;
+
+  const result = await addTask({ goal, wallet });
+  res.json(result);
 });
 
 app.get("/health", (_, res) => res.send("ok"));
