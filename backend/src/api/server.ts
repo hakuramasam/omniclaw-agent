@@ -6,12 +6,10 @@ app.use(express.json());
 
 app.post("/task", async (req, res) => {
   const { goal } = req.body;
-  const result = await runAgent(goal);
+  const result = await runAgent(goal, req.body.wallet);
   res.json(result);
 });
 
 app.get("/health", (_, res) => res.send("ok"));
 
-app.listen(3001, () => {
-  console.log("Agent running on 3001");
-});
+app.listen(3001, () => console.log("Agent running on 3001"));
