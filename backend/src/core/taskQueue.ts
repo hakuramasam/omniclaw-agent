@@ -1,11 +1,12 @@
-import Queue from "bullmq";
-export const taskQueue = new Queue("tasks", { connection: { host: "127.0.0.1", port: 6379 } });
+import PQueue from "p-queue";
+import { runAgent } from "./agent";
 
-export async function addTask(task: any) {
-  await taskQueue.add("newTask", task);
-}
-
-taskQueue.process(async job => {
-  const { runAgent } = await import("./agent");
-  return await runAgent(job.data.goal, job.data.wallet);
+export const queue = new PQueue({
+  concurrency: 2,
+  interval: 1000,
+  intervalCap: 5
 });
+
+export function addTask(task: any) {
+  return queue.add(() => runAgent(task.goal, task.wallet));
+}
