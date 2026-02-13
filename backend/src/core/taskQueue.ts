@@ -1,5 +1,4 @@
 import Queue from "bullmq";
-
 export const taskQueue = new Queue("tasks", { connection: { host: "127.0.0.1", port: 6379 } });
 
 export async function addTask(task: any) {
@@ -7,6 +6,6 @@ export async function addTask(task: any) {
 }
 
 taskQueue.process(async job => {
-  const result = await runAgent(job.data.goal, job.data.wallet);
-  return result;
+  const { runAgent } = await import("./agent");
+  return await runAgent(job.data.goal, job.data.wallet);
 });
