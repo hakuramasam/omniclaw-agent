@@ -1,8 +1,8 @@
 import { plan } from "./planner";
 import { skills } from "../../skills";
 
-export async function runAgent(goal: string) {
-  let context: any = { goal, history: [] };
+export async function runAgent(goal: string, userWallet?: string) {
+  let context: any = { goal, history: [], userWallet };
 
   for (let i = 0; i < 5; i++) {
     const step = await plan(context);
