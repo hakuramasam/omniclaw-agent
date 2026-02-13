@@ -1,0 +1,8 @@
+{
+  "name": "omniclaw-agent",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ]
+}
