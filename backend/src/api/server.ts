@@ -3,9 +3,15 @@ import jwt from "jsonwebtoken";
 import { addTask } from "../core/taskQueue";
 import authRoutes from "./auth";
 import { checkGMMC } from "../core/gmmcGuard";
+import rateLimit from "express-rate-limit";
 
 const app = express();
 app.use(express.json());
+
+const taskLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 task requests per window
+});
 
 app.use("/auth", authRoutes);
 
@@ -22,7 +28,7 @@ function requireAuth(req: any, res: any, next: any) {
   }
 }
 
-app.post("/task", requireAuth, async (req: any, res) => {
+app.post("/task", taskLimiter, requireAuth, async (req: any, res) => {
   try {
     const wallet = req.user.wallet;
     const { goal } = req.body;
