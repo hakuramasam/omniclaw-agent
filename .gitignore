@@ -1,6 +1,9 @@
-node_modules
-dist
+# Environment files
 .env
 .env.local
 backend/.env
 frontend/.env
+
+# Node
+node_modules
+dist
